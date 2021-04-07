@@ -160,7 +160,7 @@ for so in range(len(Origine)):
 INFINITY = 999999
 
 
-def a_star(epsilon):
+def a_star(epsilon, N):
     Pi = [INFINITY for j in range(NbSommets)]
     LePrec = [-1 for j in range(NbSommets)]
     Marque = [-1 for j in range(NbSommets)]
@@ -168,17 +168,20 @@ def a_star(epsilon):
     PiLB_Trie = []
     Pi[sommet_depart] = 0
     Marque[sommet_depart] = 1
+    nb_sommets_explores = 0
+    # Weighted-A*
     # w sert a ponderer la distance a vol d'oiseau
     # On aura mtn pour chaque sommet candidat une distance au sommet_dest qui
     # peut etre 'mal estimee'
     # f(j) = g(j) + w * h(j)
-    w = 1 + epsilon
+    w = (1 + epsilon * (1 - (nb_sommets_explores) / N))
 
     for k in Succ[sommet_depart]:
         ind_k = Succ[sommet_depart].index(k)
         Pi[k] = Long_Arc_Succ[sommet_depart][ind_k]
         LePrec[k] = sommet_depart
         # On calcul le potentiel de k + Distance_vol_oiseau entre k et sommet_destination
+        w = (1 + epsilon * (1 - (nb_sommets_explores) / N))
         PiLB = Pi[k] + w * Distance_vol_oiseau(k)
         # point_d_insertion = bisect.bisect_left(PiLB_Trie, PiLB)
         # Pi.insert(point_d_insertion,PiLB)
@@ -186,7 +189,6 @@ def a_star(epsilon):
         bisect.insort_left(PiLB_Trie, PiLB)
         Candidats.insert(PiLB_Trie.index(PiLB), k)
 
-    nb_sommets_explores = 0
     fini = False
 
     while not fini:
@@ -197,7 +199,7 @@ def a_star(epsilon):
         Marque[j] = 1
         TraceCercle(j, 'yellow', 1)
         # et retire son potentie de la liste PiLB_Trie
-        nb_sommets_explores+=1
+        nb_sommets_explores += 1
         # print(nb_sommets_explores, j)
         PiLB_Trie.pop(0)
         # Si j == sommet_dest alors c'est fini
@@ -222,13 +224,13 @@ def a_star(epsilon):
                         Pi[k] = Pi_k
                         LePrec[k] = j
                         # On calcule la borne inf PiLB du sommet k
+                        w = (1 + epsilon * (1 - (nb_sommets_explores) / N))
                         PiLB = Pi[k] + w * Distance_vol_oiseau(k)
                         # On l'insert a sa place dans PiLB_Trie
                         bisect.insort_left(PiLB_Trie, PiLB)
                         # Et on insert k dans Candidats a la meme place
                         Candidats.insert(PiLB_Trie.index(PiLB), k)
                         # print("Candidats, PiLB_Trie.index(PiLB)")
-
 
     s = sommet_destination
     # On part du sommet_destination
@@ -238,8 +240,7 @@ def a_star(epsilon):
         TraceSegment(s, LePrec[s], 'red')
         s = LePrec[s]
     # On retourne la longueur du chemin
-    return Pi[sommet_destination]
-
+    return Pi[sommet_destination], nb_sommets_explores
 
 
 sommet_depart = 10436
@@ -253,15 +254,18 @@ sommet_depart = 10436
 
 # Weighted-A*
 sommet_destination = 22336
-epsilon = 1.1
+epsilon = 0.5
+n = 10000
 
 time_start = time.process_time()
 TraceCercle(sommet_depart, 'green', rayon_od)
 
 TraceCercle(sommet_destination, 'red', rayon_od)
 
-longueur = a_star(epsilon)
+longueur, nb_sommets_explores = a_star(epsilon, n)
 time_end = time.process_time()
 print('La duree du processus est de : ', time_end - time_start)
 print('La longueur du chemin parcouru est de : ', longueur)
+print('Le nombre de sommets explorés : ', nb_sommets_explores)
+print('weighted-A* avec w : ', 1 + epsilon)
 fen.mainloop()
