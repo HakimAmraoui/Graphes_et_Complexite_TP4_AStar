@@ -148,6 +148,7 @@ def Distance_vol_oiseau(villeA):
     yA = Latitude[villeA]
     yB = Latitude[sommet_destination]
     R = 6372795.477598
+
     AB = R * math.acos(math.sin(yA) * math.sin(yB) + math.cos(yA) * math.cos(yB) * math.cos(xA - xB))
     return (AB)
 
@@ -159,7 +160,7 @@ for so in range(len(Origine)):
 INFINITY = 999999
 
 
-def a_star():
+def a_star(epsilon):
     Pi = [INFINITY for j in range(NbSommets)]
     LePrec = [-1 for j in range(NbSommets)]
     Marque = [-1 for j in range(NbSommets)]
@@ -167,13 +168,18 @@ def a_star():
     PiLB_Trie = []
     Pi[sommet_depart] = 0
     Marque[sommet_depart] = 1
+    # w sert a ponderer la distance a vol d'oiseau
+    # On aura mtn pour chaque sommet candidat une distance au sommet_dest qui
+    # peut etre 'mal estimee'
+    # f(j) = g(j) + w * h(j)
+    w = 1 + epsilon
 
     for k in Succ[sommet_depart]:
         ind_k = Succ[sommet_depart].index(k)
         Pi[k] = Long_Arc_Succ[sommet_depart][ind_k]
         LePrec[k] = sommet_depart
         # On calcul le potentiel de k + Distance_vol_oiseau entre k et sommet_destination
-        PiLB = Pi[k] + Distance_vol_oiseau(k)
+        PiLB = Pi[k] + w * Distance_vol_oiseau(k)
         # point_d_insertion = bisect.bisect_left(PiLB_Trie, PiLB)
         # Pi.insert(point_d_insertion,PiLB)
         # print(PiLB, point_d_insertion)
@@ -216,7 +222,7 @@ def a_star():
                         Pi[k] = Pi_k
                         LePrec[k] = j
                         # On calcule la borne inf PiLB du sommet k
-                        PiLB = Pi[k] + Distance_vol_oiseau(k)
+                        PiLB = Pi[k] + w * Distance_vol_oiseau(k)
                         # On l'insert a sa place dans PiLB_Trie
                         bisect.insort_left(PiLB_Trie, PiLB)
                         # Et on insert k dans Candidats a la meme place
@@ -236,19 +242,25 @@ def a_star():
 
 
 
-sommet_depart = 3000
+sommet_depart = 10436
 
 # sommet_destination = 11342
 # Environs 8s pour la V1 et 0.8s pour la v2
 
-sommet_destination = 22279
+# sommet_destination = 22279
 # Environs 65s pour la v2
 # Environs 1.6s pour la V2
+
+# Weighted-A*
+sommet_destination = 22336
+epsilon = 1.1
+
 time_start = time.process_time()
 TraceCercle(sommet_depart, 'green', rayon_od)
 
 TraceCercle(sommet_destination, 'red', rayon_od)
-longueur = a_star()
+
+longueur = a_star(epsilon)
 time_end = time.process_time()
 print('La duree du processus est de : ', time_end - time_start)
 print('La longueur du chemin parcouru est de : ', longueur)
